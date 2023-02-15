@@ -85,15 +85,54 @@ def main():
 
 
 def shortest_path(source, target):
-    """
-    Returns the shortest list of (movie_id, person_id) pairs
-    that connect the source to the target.
 
-    If no possible path, returns None.
-    """
+    # Set starting node
+    start = Node(state=source,parent=None,action=None)
+    frontier = QueueFrontier()
+    frontier.add(start)
 
-    # TODO
-    raise NotImplementedError
+    # Initialise empty explored set
+    explored = set()
+
+    # Loop until solution
+    while True:
+
+        # If nothing remains in frontier, return None
+        if frontier.empty():
+            return None
+
+        # Remove node from frontier
+        node = frontier.remove()
+
+        # Check if node is goal
+        if node.state == target:
+            
+            # Return a list of tuples tracing from source to target
+            result = []
+            while node.parent is not None:
+                result.append(node.star,node.action)
+                node = node.parent
+            result.reverse()
+
+            return result
+        
+        # Add node to explored set
+        explored.add(node.state)
+
+        # Expand node
+        for movie in people[node.state]["movies"]:
+            for star in movies[movie]["stars"]:
+
+                child = Node(state=star,parent=node,action=movie)
+
+                # Check node is not already in frontier or explored set
+                if not frontier.contains_state(child.state) and child.state not in explored:
+                    frontier.add(child)
+
+        
+
+
+
 
 
 def person_id_for_name(name):
