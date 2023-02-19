@@ -63,6 +63,10 @@ while True:
             elif playOButton.collidepoint(mouse):
                 time.sleep(0.2)
                 user = ttt.O
+        
+
+        # time.sleep(0.2)
+        # user = ttt.X
 
     else:
 
