@@ -110,23 +110,29 @@ def shortest_path(source, target):
             # Return a list of tuples tracing from source to target
             result = []
             while node.parent is not None:
-                result.append((node.action,node.state))
+                result.append(node.star,node.action)
                 node = node.parent
             result.reverse()
+
             return result
         
         # Add node to explored set
         explored.add(node.state)
 
         # Expand node
-        # Get neighbours (co-stars from star_movies set)
-        neighbours = neighbors_for_person(node.state)
-        # Add neighbours to frontier
-        for neighbour in neighbours:
-            child = Node(state=neighbour[1],parent=node,action=neighbour[0])
-            # Check node is not already in frontier or explored set
-            if not frontier.contains_state(child.state) and child.state not in explored:
-                frontier.add(child)
+        for movie in people[node.state]["movies"]:
+            for star in movies[movie]["stars"]:
+
+                child = Node(state=star,parent=node,action=movie)
+
+                # Check node is not already in frontier or explored set
+                if not frontier.contains_state(child.state) and child.state not in explored:
+                    frontier.add(child)
+
+        
+
+
+
 
 
 def person_id_for_name(name):
