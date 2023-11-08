@@ -4,6 +4,7 @@ Tic Tac Toe Player
 
 import math
 import copy
+import random
 
 X = "X"
 O = "O"
@@ -89,14 +90,10 @@ def winner(board):
     Returns the winner of the game, if there is one.
     """
     
-    # Return None if game is not over
-    if not terminal(board):
-        return None
-    
     # Check for wins in each row
     for row in board:
         if allTheSame(row):
-            return True
+            return row[0]
     
     # Check for wins in each column
     for i in range(3):
@@ -105,7 +102,7 @@ def winner(board):
         col.append(board[1][i])
         col.append(board[2][i])
         if allTheSame(col):
-            return True
+            return col[0]
         
     # Check for wins along both diagonals
     left_diag = []
@@ -113,17 +110,17 @@ def winner(board):
     left_diag.append(board[1][1])
     left_diag.append(board[2][2])
     if allTheSame(left_diag):
-        return True
+        return left_diag[0]
     
     right_diag = []
     right_diag.append(board[0][2])
     right_diag.append(board[1][1])
     right_diag.append(board[2][0])
     if allTheSame(right_diag):
-        return True
+        return right_diag[0]
     
     # Otherwise, there is no winner
-    return False
+    return None
 
 def allTheSame(trio):
     """
@@ -168,6 +165,10 @@ def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
+
+    # If first move, pick randomly
+    if board == initial_state():
+        return (random.randint(0,2), random.randint(0,2))
 
     # Return None if board is terminal
     if terminal(board):
@@ -224,7 +225,19 @@ def minhelper(board):
 
     # Base case: board is terminal, return its utility
     if terminal(board):
-        
+        return utility(board)
+    
+    # Recursive bit: search tree of available moves
+    available_moves = actions(board)
+
+    v = -2
+    
+    for move in available_moves:
+        utility_score = maxhelper(result(board, move))
+        if v < utility_score:
+            v = utility_score
+
+    return v
 
 
 def maxhelper(board):
@@ -234,3 +247,17 @@ def maxhelper(board):
 
     # Base case: board is terminal, return its utility
     if terminal(board):
+        return utility(board)
+    
+    # Recursive bit: search tree of available moves
+    available_moves = actions(board)
+
+    v = 2
+
+    for move in available_moves:
+        utility_score = minhelper(result(board, move))
+        if v > utility_score:
+            v = utility_score
+
+    return v
+
