@@ -273,15 +273,29 @@ class MinesweeperAI():
 
         # 5) Infer new sentences by checking subsets
         sub_sents = []
-        for sent1 in self.knowledge:
-            for sent2 in self.knowledge:
-                if sent1 == sent2:
+        for i, sent1 in enumerate(self.knowledge):
+
+            if not sent1.cells:
+                continue
+
+            for sent2 in self.knowledge[i+1:]:
+                if sent1 == sent2 or not sent2:
                     continue
                 if sent1.cells.issubset(sent2.cells):
-                    sub_sent = Sentence(sent2.cells.difference(sent1.cells),
-                                        sent2.count - sent1.count)
-                    if sub_sent.cells != set() and sub_sent.count >= 0:
-                        sub_sents.append(sub_sent)
+                    new_cells = sent2.cells.difference(sent1.cells)
+                    new_count = sent2.count - sent1.count
+
+                    if new_cells and new_count >= 0:
+                        sub_sent = Sentence(new_cells, new_count)
+                    # sub_sent = Sentence(sent2.cells.difference(sent1.cells),
+                    #                     sent2.count - sent1.count)
+                        
+                        if sub_sent not in sub_sents:
+
+                    
+                    # if sub_sent.cells != set() and sub_sent.count >= 0:
+                            sub_sents.append(sub_sent)
+
         
         # Add new sub-sentences to knowledge
         self.knowledge.extend(sub_sents)
