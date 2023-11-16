@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+from math import isclose
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -170,6 +171,9 @@ def iterate_pagerank(corpus, damping_factor):
     new_ranks = {}
     N = len(corpus)
 
+    # Count iterations
+    iter = 0
+
     for page in corpus:
         new_ranks[page] = 1 / N
 
@@ -179,14 +183,17 @@ def iterate_pagerank(corpus, damping_factor):
     # Continue iterating until converged
     while not converged(prev_ranks, new_ranks):
 
+        # Increment counter
+        iter += 1
+
         # Reassign the "new_ranks" to the "prev_ranks"
-        prev_ranks = new_ranks
+        prev_ranks = new_ranks.copy()
 
         # Calculate new rankings
         for page in corpus:
 
             # Apply page rank formula
-            linked_pages = corpus[page]
+            # linked_pages = corpus[page]
 
             # Calculate probability of navigating to page by randomly "teleporting"
             rdom = (1 - damping_factor) / N
@@ -195,13 +202,30 @@ def iterate_pagerank(corpus, damping_factor):
             pr_sum = 0
 
             # Sum the scores for the linked pages
-            for linked_page in linked_pages:
-                pr_sum += prev_ranks[linked_page] / len(corpus[linked_page])
+
+            # Get all the pages which link to page rather than pages page links to
+
+            # Gather the incoming pages
+            incoming_pages = []
+            for in_page in corpus.keys():
+                if in_page is page:
+                    continue
+                if page in corpus[in_page]:
+                    incoming_pages.append(in_page)
+
+            # Add together the page ranks of the incoming links
+            for incoming_page in incoming_pages:
+                pr_sum += prev_ranks[incoming_page] / len(corpus[incoming_page])
+
+            # for linked_page in linked_pages:
+            #     pr_sum += prev_ranks[linked_page] / len(corpus[linked_page])
 
             pr_sum_damped = pr_sum * damping_factor
 
             # Calculate new PR for page
             new_ranks[page] = rdom + pr_sum_damped
+
+    # print(f"Converged after {iter} iterations.")
 
     return new_ranks
 
@@ -212,6 +236,11 @@ def converged(old, new):
 
     Convergence occurs when no PR changes by more than 0.001.
     """
+
+    # Check that sum to 1
+    total = sum(list(new.values()))
+    if not isclose(total, 1.0):
+        raise ValueError(f"Total probability is {total}")
 
     # Convergence occurs when no PR changes by more than 0.001
 
