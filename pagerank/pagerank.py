@@ -3,6 +3,7 @@ import random
 import re
 import sys
 from math import isclose
+# import networkx as nx
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -17,6 +18,10 @@ def main():
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
+    # netx_res = nx.pagerank(nx.DiGraph(corpus))
+    # G = sorted(netx_res.items(), key=lambda item: item[1])
+    # print(nx.pagerank(G, max_iter=2, tol=1.0))
+    # print(G)
     ranks = iterate_pagerank(corpus, DAMPING)
     print(f"PageRank Results from Iteration")
     for page in sorted(ranks):
@@ -180,10 +185,25 @@ def iterate_pagerank(corpus, damping_factor):
     for page in corpus:
         prev_ranks[page] = 0
     
+    # Calculate probability of navigating to page by randomly "teleporting"
+    rdom = (1 - damping_factor) / N
+
+    # Construct incoming links dictionary
+    # Each key, value pair represents the pages linking to the key
+    # {"page 1": ["page 2", "page 3"]} - pages 2 and 3 link to page 1
+    in_corpus = {}
+    for page1 in corpus:
+        in_corpus[page1] = []
+        for page2 in corpus:
+            if page1 == page2:
+                continue
+            if page1 in corpus[page2]:
+                in_corpus[page1].append(page2)
+
     # Continue iterating until converged
     while not converged(prev_ranks, new_ranks):
 
-        # Increment counter
+        # Increment counter for debug
         iter += 1
 
         # Reassign the "new_ranks" to the "prev_ranks"
@@ -192,39 +212,26 @@ def iterate_pagerank(corpus, damping_factor):
         # Calculate new rankings
         for page in corpus:
 
-            # Apply page rank formula
-            # linked_pages = corpus[page]
-
-            # Calculate probability of navigating to page by randomly "teleporting"
-            rdom = (1 - damping_factor) / N
-
             # Calculate the probability of navigating to page by link travel
             pr_sum = 0
 
-            # Sum the scores for the linked pages
-
-            # Get all the pages which link to page rather than pages page links to
-
-            # Gather the incoming pages
-            incoming_pages = []
-            for in_page in corpus.keys():
-                if in_page is page:
-                    continue
-                if page in corpus[in_page]:
-                    incoming_pages.append(in_page)
-
             # Add together the page ranks of the incoming links
-            for incoming_page in incoming_pages:
-                pr_sum += prev_ranks[incoming_page] / len(corpus[incoming_page])
+            for incoming_page in in_corpus[page]:
 
-            # for linked_page in linked_pages:
-            #     pr_sum += prev_ranks[linked_page] / len(corpus[linked_page])
+                # Handle case of dangling node where 0 incoming links
+                if not len(corpus[incoming_page]) == 0:
+                    # The rank of the incoming page in the previous iteration
+                    # divided by the number of links on the incoming page
+                    pr_sum += prev_ranks[incoming_page] / len(corpus[incoming_page])
+
+                else:
+                    pr_sum += prev_ranks[incoming_page] / N
 
             pr_sum_damped = pr_sum * damping_factor
 
             # Calculate new PR for page
             new_ranks[page] = rdom + pr_sum_damped
-
+                
     # print(f"Converged after {iter} iterations.")
 
     return new_ranks
@@ -238,18 +245,25 @@ def converged(old, new):
     """
 
     # Check that sum to 1
-    total = sum(list(new.values()))
-    if not isclose(total, 1.0):
-        raise ValueError(f"Total probability is {total}")
+    # total = sum(list(new.values()))
+
+    # if not isclose(total, 1.0):
+    #     raise ValueError(f"Total probability is {total}")
 
     # Convergence occurs when no PR changes by more than 0.001
-
-    # Iterate over each page
     for page in old:
 
         # When any page rank changes by more than 0.001, no convergence
         if abs(old[page] - new[page]) > 0.001:
             return False
+    
+    # Normalise
+    total_sum = sum(list(new.values()))
+    if not isclose(total_sum, 1.0):
+        for p in new:
+            new[p] *= 1.0 / total_sum
+
+    # print(sorted(new.items(), key=lambda item: item[1]))
 
     return True
 

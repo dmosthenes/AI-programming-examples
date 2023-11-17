@@ -6,7 +6,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["corpus0"],
+            "args": ["corpus2"],
             "console": "integratedTerminal"
         }
     ]
