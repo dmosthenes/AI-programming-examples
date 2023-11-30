@@ -144,13 +144,13 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     p = 1
 
     # Loop over each person
-    for person in people:
+    for person, person_dict in people.items():
 
         gene_prob = 0
         trait_prob = 0
 
         # When person has no parents
-        if person["mother"] is None and person["father"] is None:
+        if person_dict["mother"] is None and person_dict["father"] is None:
 
             # Take probability that person in one_gene has one copy
             if person in one_gene:
@@ -176,9 +176,9 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         # When person has parents
         else:
 
-            # Get list of parents
-            mother = people[person["mother"]]
-            father = people[person["father"]]
+            # Get parent names
+            mother = person_dict["mother"]
+            father = person_dict["father"]
 
             # Take probability of inheriting gene from mother
             mother_prob = 0.5 if mother in one_gene else 0.99 if mother in two_genes else PROBS["mutation"]
@@ -190,10 +190,10 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             if person in one_gene:
 
                 # Take probability of gene from mother but not father
-                prob_1 = mother * (1 - father_prob)
+                prob_1 = mother_prob * (1 - father_prob)
 
                 # Take probability of gene from father but not mother
-                prob_2 = father * (1 - mother_prob)
+                prob_2 = father_prob * (1 - mother_prob)
 
                 # Add together to get gene probability
                 gene_prob = prob_1 + prob_2
@@ -205,7 +205,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             elif person in two_genes:
 
                 # Take probability of gene from parent 1 and parent 2
-                trait_prob = mother_prob * father_prob
+                gene_prob = mother_prob * father_prob
 
                 # Take the probability that person with 2 genes has / hasn't the trait
                 trait_prob = PROBS["trait"][2][True] if person in have_trait else PROBS["trait"][2][False]
@@ -235,24 +235,24 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     """
     
     # Loop over each person in dictionary
-    for person in probabilities:
+    for person, person_dict in probabilities.items():
 
         # Add p to relevant number of genes
         if person in one_gene:
-            person["gene"][1] += p
+            person_dict["gene"][1] += p
 
         elif person in two_genes:
-            person["gene"][2] += p
+            person_dict["gene"][2] += p
 
         else:
-            person["gene"][0] += p
+            person_dict["gene"][0] += p
 
         # Add p to trait or not trait
         if person in have_trait:
-            person["trait"][True] += p
+            person_dict["trait"][True] += p
 
         else:
-            person["trait"][False] += p
+            person_dict["trait"][False] += p
 
 
 def normalize(probabilities):
@@ -262,22 +262,22 @@ def normalize(probabilities):
     """
 
     # Loop over each person in dictionary
-    for person in probabilities:
+    for person, person_dict in probabilities.items():
 
         # Get sum of trait distribution
-        t_sum = person["trait"][True] + person["trait"][False]
+        t_sum = person_dict["trait"][True] + person_dict["trait"][False]
 
         # Normalise trait distribution
-        person["trait"][True] = person["trait"][True] / t_sum
-        person["trait"][False] = person["trait"][False] / t_sum
+        person_dict["trait"][True] = person_dict["trait"][True] / t_sum
+        person_dict["trait"][False] = person_dict["trait"][False] / t_sum
 
         # Get sum of gene distribution
-        g_sum = person["gene"][0] + person["gene"][1] + person["gene"][2]
+        g_sum = person_dict["gene"][0] + person_dict["gene"][1] + person_dict["gene"][2]
 
         # Normalise gene distribution
-        person["gene"][0] = person["gene"][0] / g_sum
-        person["gene"][1] = person["gene"][1] / g_sum
-        person["gene"][2] = person["gene"][2] / g_sum
+        person_dict["gene"][0] = person_dict["gene"][0] / g_sum
+        person_dict["gene"][1] = person_dict["gene"][1] / g_sum
+        person_dict["gene"][2] = person_dict["gene"][2] / g_sum
 
 
 if __name__ == "__main__":
