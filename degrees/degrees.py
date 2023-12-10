@@ -92,7 +92,8 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    frontier = StackFrontier()
+    # frontier = StackFrontier()
+    frontier = QueueFrontier()
 
     expand = Node(source, None, None)
     while True:
@@ -104,32 +105,40 @@ def shortest_path(source, target):
         for person in neigh:
 
             # Add each neighbour as a node
-            state = person[1]
-            parent = expand
-            action = person[0]
+            node = Node(person[1], expand, person[0])
 
-            frontier.add(Node(state, parent, action))
+            # Return early if state is target
+            if node.state == target:
+                return return_film_list(node)
+
+            frontier.add(node)
 
         # Remove the first neighbour
         try:
             pop = frontier.remove()
-        except Exception("empty frontier"):
+        except Exception:
             # Return None if frontier is empty
             return None
         
         # If node is the target, return solution
-        if pop.state == target:
-            out = []
-            i = pop
-            while i.parent != None:
-                out.append((i.action, i.state))
-                i = i.parent
-            out.reverse()
-            return out
+        # if pop.state == target:
+        #     return return_film_list(pop)
 
         # Otherwise, expand the node
         expand = pop
 
+def return_film_list(current):
+    """
+    Returns a list of tuples from target to source.
+    """
+    out = []
+
+    while current.parent != None:
+        out.append((current.action, current.state))
+        current = current.parent
+    
+    out.reverse()
+    return out
 
 def person_id_for_name(name):
     """
