@@ -1,11 +1,9 @@
 # Sudoku solver with inference and backtracking
 
 # Example board
-# [8, 5, 0, 0, 0, 2, 4, 0, 0, 7, 2, 0, 0, 0, 0, 0, 0, 9, 0, 0, 
-# 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 7, 0, 0, 2, 3, 0, 5, 0, 
-# 0, 0, 9, 0, 0 ,0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 
-# 0, 7, 0, 0, 1, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 0, 4, 0]
+# [8, 5, 0, 0, 0, 2, 4, 0, 0, 7, 2, 0, 0, 0, 0, 0, 0, 9, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 7, 0, 0, 2, 3, 0, 5, 0, 0, 0, 9, 0, 0 ,0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 7, 0, 0, 1, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 0, 4, 0]
 
+from copy import copy
 
 class SudokuNode:
     """
@@ -63,9 +61,8 @@ class SudokuBoard:
         self.board = []
 
         # defines coordinates for top left corner (0,0) to bottom right (8,8)
-        # board is list of 27 lists of 3 nodes
-        counter = 0
-        box_counter = 0
+        node_counter = 0            # tracks the index of the next node
+        box_counter = 0             # tracks the current node's box
         for y in range(9):
             # Need to check if box counter should decrement by 3 or add 1
             if y == 3 or y == 6:
@@ -73,11 +70,10 @@ class SudokuBoard:
             else:
                 box_counter -= 3
             for x in range(9):
-                counter += 1
-                if counter % 3 == 0:
-                    self.board.append(list())
+                node_counter += 1
+                if node_counter % 3 == 0:
                     box_counter += 1
-                self.board[-1].append(SudokuNode(int(board[0]), (x,y), box_counter))
+                self.board.append(SudokuNode(int(board[0]), (x,y), box_counter))
                 board = board[1:]
         
         self.adjacent_loop()
@@ -107,79 +103,11 @@ class SudokuBoard:
         # Get all nodes for the target box
         for node in self.board:
             if node.box == target_box:
-                adjacent nodes.add(node)
-
-
-
-    def add_adjacent_nodes(self, target_node):
-        """
-        Given a target node, updates the node's adjacent node field with a
-        set of its 21 adjacent nodes from the row, column, and surrounding
-        box.
-        """
-        adjacent_nodes = set()
-        target_row = target_node.coordinates[1]       # Determines the row of the target node
-        target_col = target_node.coordinates[0]       # Determines the column of the target node
-
-        # Get adjacent nodes for the row
-        # Loop over lists to find other nodes in the row
-
-        # 0,1,2
-        # 3,4,5
-        # 6,7,8
-        # 9,10,11
-        # 12,13,14
-        # 15,16,17
-        # 18,19,20
-        # 21,22,23
-        # 24,25,26
-
-        # If in second row, y coordinate is 1, lists 3,4,5 are required
-        # If in fifth row, y coordinate is 4, lists 12,13,14 are required
-        # If in ninth row, y coordinate is 8, lists 24,25,26 are required
-
-        # Iterate over 3 sub-lists
-        for i in range(3):
-            # Select sub-list containing the relevant nodes given the target node's row
-            for node in self.board[target_row * 3 + i]:
                 adjacent_nodes.add(node)
-        assert len(adjacent_nodes) == 9
 
-        # Get adjacent nodes for the column
-
-        # If in second column, x coordinate is 1, second node of lists 0,3,6,9,12,15,18,21,24 are required (0,1,2)
-        # If in fifth column, x coordinate is 4, second node of lists 1,4,7,10,13,16,19,22,25 are required (3,4,5)
-        # If in ninth column, x coordinate is 8, third node of lists 2,5,8,11,14,17,20,23,26 are required (6,7,8)
-        
-        # Define the start column given the target node's column
-        start = -3 if target_col < 3 else 0 if target_col < 6 else 3
-        # Iterate over 9 relevant sub-lists
-        for _ in range(9):
-            # Select the relevant sub-list and the relevant position within each sub-list
-            start += 3
-            adjacent_nodes.add(self.board[start][target_col % 3])
-        assert len(adjacent_nodes) == 17
-
-        # Get adjacent nodes for the box
-
-        # Determine row to start search around target node
-        row_start = 0 if target_row < 3 else 9 if target_row < 6 else 18
-
-        # Determine col to start search around target node
-        col_start = 0 if target_col < 3 else 1 if target_col < 6 else 2
-
-        # Index of first sub-list is row_start + col_start
-
-        # Iterate over each group of 3 sub-lists
-        for i in range(3):
-            # Iterate over each node in the relevant sub-list
-            for node in self.board[row_start + col_start + (3 * i)]:
-                adjacent_nodes.add(node)
-        assert len(adjacent_nodes) == 21
-
-        adjacent_nodes.remove(target_node.coordinates)
         target_node.add_adjacent(adjacent_nodes)
 
+   
     def adjacent_loop(self):
         """
         Calls add_adjacent_node function for each node in the board.
@@ -191,11 +119,57 @@ class SudokuBoard:
     def constraints_loop(self):
         """
         Updates the contrainsts set for each node in the board.
+        Return True if constraints of any node are updated, otherwise False.
         """
+        updated = False
         for sub_list in self.board:
             for node in sub_list:
+                const_before = copy(node.constraints)
                 node.update_constraints()
+                if const_before != node.constraints:
+                    updated = True
+        
+        return updated
     
+    def backtrack(self):
+        """
+        Recursively selects the most constrained node and sets it to a possible value.
+        Then calls the constraints loop function to update adjacent information.
+        Continues until the board is complete and correct.
+        """
+        
+        # Base case: board is complete and correct?
+
+        # Recursive bit
+
+        # Update constraints at start of each layer of recursion
+        self.constraints_loop()
+
+        # Search for most constrained node (node with smallest contraints set)
+        most_constrained = None
+        shortest = 9
+        for node in self.board:
+            if len(node.constraints) < shortest:
+                shortest = len(node.constraints)
+                most_constrained = node
+
+        # Loop over available options in the most_constrained node
+        for possibility in most_constrained.constraints:
+
+            # Assign the next possibility as the node's value and move down a layer
+            most_constrained.value = possibility
+
+            self.backtrack()
+
+            # Break loop is resulting board is still correct
+
+
+        
+        # When undoing, check if each undo is required
+
+
+        
+
     def is_complete(self):
         """
         Returns True if all values are non-zero otherwise False.
@@ -219,7 +193,7 @@ class SudokuBoard:
                     row_total.add(node.value)
             try:
                 assert sum(row_total) == 45
-            except:
+            except AssertionError:
                 return False
             row_total = set()
 
@@ -231,7 +205,7 @@ class SudokuBoard:
                     col_total.add(node.value)
             try:
                 assert sum(col_total) == 45
-            except:
+            except AssertionError:
                 return False
             col_total = set()
         
@@ -243,68 +217,11 @@ class SudokuBoard:
                     box_total.add(node.value)
             try:
                 assert sum(box_total) == 45
-            except:
+            except AssertionError:
                 return False
             box_total = set()
         
         return True
-
-    def is_correct(self):
-        """
-        Check if each row, column, and box sums to 45.
-        """
-        # Check rows
-        row_total = set()
-        counter = 0
-        for sub_list in self.board:
-            counter += 1
-            for node in sub_list:
-                row_total.add(node.value)
-            if counter % 3 == 0:
-                if sum(row_total) != 45:
-                    return False
-                row_total = set()
-
-        # Check columns
-        col_total = set()
-        # Index into one of three top sub-lists, 0,1,2
-        start = 0
-        # Iterate over each of three groups of three columns
-        for _ in range(3):
-            # Iterate over each of three node positions in sub-list
-            for i in range(3):
-                # Iterate over each of nine rows
-                for __ in range(9):
-                    col_total.add(self.board[start][i].value)
-                    start += 3
-                if sum(col_total) != 45:
-                    return False
-                col_total = set()
-                # Adjust start value to return to first sub-list for this iteration
-                start -= 24
-
-            # Adjust start value to move to next group of three columns
-            start += 1
-
-        # Check boxes
-        box_total = set()
-        start = 0
-        # Index into sub_list 0,1,2 then 9,10,11 etc
-        for _ in range(9):
-            for node in self.board[start]:
-                box_total.add(node.value)
-            for node in self.board[start + 3]:
-                box_total.add(node.value)
-            for node in self.board[start + 3]:
-                box_total.add(node.value)
-            if sum(box_total) != 45:
-                return False
-            start += 1
-            if start == 2 or start == 11:
-                start += 7
-
-        return True
-
 
     def print_board(self):
         """
@@ -331,13 +248,20 @@ def main():
     
     # Ingest suduko board
     board_string = input("Enter board:\n")
-    board_string.strip(" ,[]")
+    board_string.strip(" ,[]#")
     board = SudokuBoard(board_string)
 
     # Update constraints of each node until all values are resolved
     while not board.is_complete():
         board.print_board()
-        board.constraints_loop()
+        constraints_updated = board.constraints_loop()
+        # Checks if any contraints set of any node has changed
+        if not constraints_updated:
+            break
+        input("Continue y/n?")
+
+    # Once all constraints have been updated as much as possible, commence backtracking
+    board.backtrack()
     
     print(f"Certified correct: {board.is_correct()} ")
 
@@ -345,6 +269,75 @@ def main():
 if __name__ == "__main__":
     main()
 
+# first attempt Sudoku Board method
+ # def add_adjacent_nodes(self, target_node):
+    #     """
+    #     Given a target node, updates the node's adjacent node field with a
+    #     set of its 21 adjacent nodes from the row, column, and surrounding
+    #     box.
+    #     """
+    #     adjacent_nodes = set()
+    #     target_row = target_node.coordinates[1]       # Determines the row of the target node
+    #     target_col = target_node.coordinates[0]       # Determines the column of the target node
+
+    #     # Get adjacent nodes for the row
+    #     # Loop over lists to find other nodes in the row
+
+    #     # 0,1,2
+    #     # 3,4,5
+    #     # 6,7,8
+    #     # 9,10,11
+    #     # 12,13,14
+    #     # 15,16,17
+    #     # 18,19,20
+    #     # 21,22,23
+    #     # 24,25,26
+
+    #     # If in second row, y coordinate is 1, lists 3,4,5 are required
+    #     # If in fifth row, y coordinate is 4, lists 12,13,14 are required
+    #     # If in ninth row, y coordinate is 8, lists 24,25,26 are required
+
+    #     # Iterate over 3 sub-lists
+    #     for i in range(3):
+    #         # Select sub-list containing the relevant nodes given the target node's row
+    #         for node in self.board[target_row * 3 + i]:
+    #             adjacent_nodes.add(node)
+    #     assert len(adjacent_nodes) == 9
+
+    #     # Get adjacent nodes for the column
+
+    #     # If in second column, x coordinate is 1, second node of lists 0,3,6,9,12,15,18,21,24 are required (0,1,2)
+    #     # If in fifth column, x coordinate is 4, second node of lists 1,4,7,10,13,16,19,22,25 are required (3,4,5)
+    #     # If in ninth column, x coordinate is 8, third node of lists 2,5,8,11,14,17,20,23,26 are required (6,7,8)
+        
+    #     # Define the start column given the target node's column
+    #     start = -3 if target_col < 3 else 0 if target_col < 6 else 3
+    #     # Iterate over 9 relevant sub-lists
+    #     for _ in range(9):
+    #         # Select the relevant sub-list and the relevant position within each sub-list
+    #         start += 3
+    #         adjacent_nodes.add(self.board[start][target_col % 3])
+    #     assert len(adjacent_nodes) == 17
+
+    #     # Get adjacent nodes for the box
+
+    #     # Determine row to start search around target node
+    #     row_start = 0 if target_row < 3 else 9 if target_row < 6 else 18
+
+    #     # Determine col to start search around target node
+    #     col_start = 0 if target_col < 3 else 1 if target_col < 6 else 2
+
+    #     # Index of first sub-list is row_start + col_start
+
+    #     # Iterate over each group of 3 sub-lists
+    #     for i in range(3):
+    #         # Iterate over each node in the relevant sub-list
+    #         for node in self.board[row_start + col_start + (3 * i)]:
+    #             adjacent_nodes.add(node)
+    #     assert len(adjacent_nodes) == 21
+
+    #     adjacent_nodes.remove(target_node.coordinates)
+    #     target_node.add_adjacent(adjacent_nodes)
 
         # Generate nine adjacency boxes
     # Possible boxes: 
