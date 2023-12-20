@@ -137,13 +137,15 @@ class SudokuBoard:
         Then calls the constraints loop function to update adjacent information.
         Continues until the board is complete and correct.
         """
-        
-        # Base case: board is complete and correct?
-
-        # Recursive bit
 
         # Update constraints at start of each layer of recursion
         self.constraints_loop()
+
+        # Base case: board is complete and correct?
+        if self.is_complete() and self.is_correct():
+            return self.board
+
+        # Recursive bit
 
         # Search for most constrained node (node with smallest contraints set)
         most_constrained = None
@@ -159,16 +161,21 @@ class SudokuBoard:
             # Assign the next possibility as the node's value and move down a layer
             most_constrained.value = possibility
 
-            self.backtrack()
+            new_board = self.backtrack()
 
-            # Break loop is resulting board is still correct
+            # Return board if resulting board is still correct
+            if new_board.is_complete() and new_board.is_correct():
+                return new_board
+
+            # If the new board returned by the lower layer is None,
+            # the chosen value is wrong and the loop must continue
+            # This occurs automatically
 
 
-        
-        # When undoing, check if each undo is required
-
-
-        
+        # At this point in execution, all possible values for the node have been exhausted
+        # Return None to backtrack to the previous layer and make a different choice
+        return None
+    
 
     def is_complete(self):
         """
@@ -227,7 +234,7 @@ class SudokuBoard:
         """
         Prints the current values of each node to terminal as a grid.
         """
-        print("_" * 9)
+        print(" _" * 9)
         counter = 0
         for sub_list in self.board:
             for node in sub_list:
@@ -236,7 +243,7 @@ class SudokuBoard:
                 print(node.value)
             if counter % 9 == 0:
                 print("|")
-                print("_" * 9)
+                print(" _" * 9)
 
 
 def main():
@@ -254,17 +261,20 @@ def main():
     # Update constraints of each node until all values are resolved
     while not board.is_complete():
         board.print_board()
-        constraints_updated = board.constraints_loop()
-        # Checks if any contraints set of any node has changed
-        if not constraints_updated:
+
+        # Break loop if no contraints set of any node has changed
+        if not board.constraints_loop():
             break
         input("Continue y/n?")
-
-    # Once all constraints have been updated as much as possible, commence backtracking
-    board.backtrack()
     
+    if not board.is_complete():
+        # Once all constraints have been updated as much as possible, commence backtracking
+        board = board.backtrack()
+
     print(f"Certified correct: {board.is_correct()} ")
 
+    board.print_board()
+    
 
 if __name__ == "__main__":
     main()
