@@ -104,12 +104,16 @@ class CrosswordCreator():
         # Loop over all variables
         for var in self.crossword.variables:
 
-            # Loop over all words in variable's domain
-            for word in self.domains[var]:
+            # Create new set for var domain containing only words of length
+            # consistent with unary constraint
+            self.domains[var] = {word for word in self.domains[var] if len(word) == var.length}
 
-                # Remove any words which are the wrong length
-                if len(word) != var.length:
-                    self.domains[var].remove(word)
+            # # Loop over all words in variable's domain
+            # for word in copy(self.domains[var]):
+
+            #     # Remove any words which are the wrong length
+            #     if len(word) != var.length:
+            #         self.domains[var].remove(word)
 
     def revise(self, x, y):
         """
@@ -134,14 +138,20 @@ class CrosswordCreator():
         x_coord = coords[0]
         y_coord = coords[1]
 
-        for x_word in self.domains[x]:
+        # Loop over copy of x domain words, original domain will change size
+        for x_word in copy(self.domains[x]):
 
+            # Remove x_word if there is not at least 1 word with equal char at index
             for y_word in self.domains[y]:
 
-                # Check if the character in x_word at overlap equals character in y_word at overlap
-                if x_word[x_coord] != y_word[y_coord]:
-                    self.domains[x].remove(x_word)
-                    revisions = True
+                # When a word in y domain has matching character
+                if x_word[x_coord] == y_word[y_coord]:
+                    # break out of y loop and consider next x word
+                    break
+            
+            # When no char match is found, remove word from x
+            self.domains[x].remove(x_word)        
+            revisions = True
 
         # Return revisions value
         return revisions
@@ -243,17 +253,6 @@ class CrosswordCreator():
         puzzle without conflicting characters); return False otherwise.
         """
 
-        # Check if assigned words comply with overlap constraint
-        # Loop over each overlap/arc
-        for (x,y), (x_index,y_index) in self.crossword.overlaps.items():
-
-            # Check if the assigned words have the same character at overlap index
-            if not assignment[x][x_index] == assignment[y][y_index]:
-
-                # If not, check if either is unassigned
-                if assignment[x] is not None or assignment[y] is not None:
-                    return False
-        
         # Check if assigned words comply with variable length constraint
         # Loop over variables in crossword
         for var, word in assignment.items():
@@ -266,6 +265,24 @@ class CrosswordCreator():
             if len(word) != var.length:
                 return False
             
+            # Check if var's assigned neighbours comply
+            # Get neighbours
+            neighs = self.crossword.neighbors(var)
+
+            # Iterate over neighbours
+            for neigh in neighs:
+
+                # Check if neigh is assigned
+                if neigh in assignment:
+                    neigh_word = assignment[neigh]
+
+                    # Get overlap coordinates
+                    (var_index, neigh_index) = self.crossword.overlaps[var,neigh]
+
+                    # Return False if character is not the same
+                    if not word[var_index] == neigh_word[neigh_index]:
+                        return False
+        
         return True
 
     def order_domain_values(self, var, assignment):
@@ -279,36 +296,31 @@ class CrosswordCreator():
         # Create list of tuples of possible words and their n value
         least_constrained = []
 
+        # Get var neighbours
+        var_neigh = self.crossword.neighbors(var)
+
         # Loop over the domain of var
-        for word in self.domains[var]:
+        for var_word in self.domains[var]:
 
             # Record least-constraining heuristic
             # n is the options available for given word
             n = 0
 
-            # Loop over each overlap between other variables
-            for (var1, var2), (index1, index2) in self.crossword.overlaps.items():
+            # Loop over each of var's neighbours
+            for neigh in var_neigh:
 
-                # Check that other var is not already assigned
-                if assignment[var1] is None or assignment[var2] is None:
+                # Get coordinates of overlap between var and neigh
+                (var_index, neigh_index) = self.crossword.overlaps[var,neigh]
+ 
+                # Check how many words are available given chosen word
+                for neigh_word in self.domains[neigh]:
 
-                    # Check if var is in the overlap
-                    if var.__eq__(var1):
-
-                        # Check how many words in other var at index (when var is var1)
-                        for word2 in self.domains[var2]:
-                            if word2[index2] == word[index1]:
-                                n += 1
-
-                    # Check expressly that var is in the overlap
-                    elif var.__eq__(var2):
-                        # Check alternative case (when var is var2)
-                        for word2 in self.domains[var1]:
-                            if word2[index1] == word[index2]:
-                                n += 1
+                    # Check if neigh_word has same char at var_word overlap
+                    if var_word[var_index] == neigh_word[neigh_index]:
+                        n += 1
             
-            # Add tuple of current word and its n value
-            least_constrained.append((word, n))
+            # Add tuple of current var_word and its n value
+            least_constrained.append((var_word, n))
         
         # Sort list according to highest n value first
         least_constrained.sort(key=lambda x: x[1])
@@ -328,21 +340,20 @@ class CrosswordCreator():
         # Create a list to contain tuple of variable and domain size
         smallest_domain = []
 
-        # Loop over unassigned variables
-        for var, word in assignment.items():
+        # Loop over all variables
+        for var in self.crossword.variables:
 
-            # Skip is assigned
-            if word is None:
-                continue
-
-            # Add to list as tuple with domain size
-            smallest_domain = (var, len(self.domains[var]))
+            # Skip any variables already assigned
+            if var not in assignment:
+                # Append unassigned as tuple with domain length
+                smallest_domain.append((var, len(self.domains[var])))
 
         # Sort by smallest to largest domain
         smallest_domain.sort(key=lambda x: x[1], reverse=True)
 
         # Reduce list to only elements with domains of equal size to smallest
         small_n = smallest_domain[0][1]
+
         smallest_domain = [item for item in smallest_domain if not item[1] > small_n]
 
         # When list has more than one element, select element with most neighbours
@@ -350,7 +361,7 @@ class CrosswordCreator():
 
             highest_degree = (smallest_domain[0][0], len(self.crossword.neighbors(smallest_domain[0][0])))
 
-            for var in smallest_domain:
+            for (var,_) in smallest_domain:
 
                 if len(self.crossword.neighbors(var)) > highest_degree[1]:
 
