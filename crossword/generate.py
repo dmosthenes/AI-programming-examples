@@ -2,7 +2,7 @@ import sys
 
 from crossword import *
 from queue import Queue
-
+from copy import copy
 
 class CrosswordCreator():
 
@@ -106,6 +106,8 @@ class CrosswordCreator():
 
             # Loop over all words in variable's domain
             for word in self.domains[var]:
+
+                # Remove any words which are the wrong length
                 if len(word) != var.length:
                     self.domains[var].remove(word)
 
@@ -157,9 +159,38 @@ class CrosswordCreator():
         arc_queue = Queue()
 
         # Assume arcs is a list of tuples (v1, v2)
+        # If optional argument is given, return a list of inconsistent words
+        # for each variable Y in (Y,X)
         if arcs is not None:
             for arc in arcs:
                 arc_queue.put(arc)
+
+            # Dictionary of keys Y, and values of type list which are words
+            # inconsistent with the word assigned to X
+            
+            inconsistent_words = {}
+
+            # Loop over each overlap
+            while not arc_queue.empty():
+                (y, x, word) = arc_queue.get()
+
+                # Get overlap coordinates
+                (y_index, x_index) = self.crossword.overlaps[y,x]
+
+                # Get character that must be at y_index for consistency
+                char = word[x_index]
+
+                # Remove any words which have char at y_index (are consistent)
+                y_dom = copy(self.domains[y])
+                for value in y_dom:
+                    if value[y_index] == char:
+                        y_dom.remove(value)
+                
+                # Assign remaining (inconsistent) words to dictionary
+                inconsistent_words[y] = y_dom
+            
+            # Return dictionary
+            return inconsistent_words
         
         # Add all arcs in the crossword if paramater is None
         else:
@@ -167,7 +198,7 @@ class CrosswordCreator():
                 arc_queue.put(arc)
 
         # Until all arcs are dequeued
-        while len(arc_queue) != 0:
+        while not arc_queue.empty():
             (x, y) = arc_queue.get()
 
             # Revise arc
@@ -192,10 +223,10 @@ class CrosswordCreator():
         """
 
         # Check that each variable in crossword is accounted for
-        vars1 = [var for var in self.crossword.variables]
-        vars2 = assignment.keys()
+        # vars1 = [var for var in self.crossword.variables]
+        # vars2 = assignment.keys()
 
-        if len(vars1) != len(vars2):
+        if len(self.crossword.variables) != len(assignment):
             return False
 
         # Check that each variable has a word assigment
@@ -341,7 +372,58 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+        
+        # Base case: assignment complete
+        if self.assignment_complete(assignment):
+            return assignment
+        
+        # Recursive bit: make next assignment
+
+        # Select unassigned variable
+        var = self.select_unassigned_variable(assignment)
+
+        # Loop over values in var's domain
+        for word in self.order_domain_values(var, assignment):
+
+            # Assign word in assignment dictionary
+            assignment[var] = word
+
+            inferences = None
+
+            # Continue to next word if assignment is not consistent
+            if self.consistent(assignment):
+                
+                # Otherwise, update inferences using ac3 and add to assignment
+
+                # Get all neighbours of X, the current var
+                Y_VAR = self.crossword.neighbors(var)
+
+                # Create a list of tuples representing overlaps (Y,X)
+                arcs = [(Y,var,word) for Y in Y_VAR]
+
+                # Call ac3 on queue of arcs (Y,X) where Y is a neighbour of X
+                inferences = self.ac3(arcs)
+
+                # Loop over inferences dictionary
+                for Y, inconsistent in inferences.items():
+
+                    # Remove the inconsistent words from the domain of Y
+                    self.domains[Y] = self.domains[Y].difference(inconsistent)
+
+                # Store result of backtracking, return if not None
+                result = self.backtrack(assignment)
+                if result is not None:
+                    return result
+            
+            # Otherwise, undo the assignment and remove inferences
+            assignment[var] = None
+
+            # Remove inferences (add inconsistent words back)
+            if inferences is not None:
+                for Y, inconsistent in inferences.items():
+                    self.domains[Y] = self.domains[Y].union(inconsistent)
+
+        return None
 
 
 def main():
