@@ -192,7 +192,7 @@ class CrosswordCreator():
 
                 # Remove any words which have char at y_index (are consistent)
                 y_dom = copy(self.domains[y])
-                for value in y_dom:
+                for value in self.domains[y]:
                     if value[y_index] == char:
                         y_dom.remove(value)
                 
@@ -273,7 +273,7 @@ class CrosswordCreator():
             for neigh in neighs:
 
                 # Check if neigh is assigned
-                if neigh in assignment:
+                if neigh in assignment and assignment[neigh] is not None:
                     neigh_word = assignment[neigh]
 
                     # Get overlap coordinates
