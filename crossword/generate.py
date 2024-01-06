@@ -150,8 +150,12 @@ class CrosswordCreator():
                     break
             
             # When no char match is found, remove word from x
-            self.domains[x].remove(x_word)        
-            revisions = True
+            # Condition is met only if end of y domain is
+            # reached without finding any matches (for-else)
+            # Break statement is never executed
+            else:
+                self.domains[x].remove(x_word)        
+                revisions = True
 
         # Return revisions value
         return revisions
@@ -172,6 +176,7 @@ class CrosswordCreator():
         # If optional argument is given, return a list of inconsistent words
         # for each variable Y in (Y,X)
         if arcs is not None:
+            
             for arc in arcs:
                 arc_queue.put(arc)
 
@@ -201,11 +206,18 @@ class CrosswordCreator():
             
             # Return dictionary
             return inconsistent_words
-        
+
         # Add all arcs in the crossword if paramater is None
         else:
-            for arc in self.crossword.overlaps.keys():
-                arc_queue.put(arc)
+
+            # Loop over each variable
+            for var in self.crossword.variables:
+
+                # Get neighbours for each variable
+                for neigh in self.crossword.neighbors(var):
+
+                    # Add tuple to arc queue
+                    arc_queue.put((var,neigh))
 
         # Until all arcs are dequeued
         while not arc_queue.empty():
@@ -216,13 +228,14 @@ class CrosswordCreator():
                 
                 # Problem is insoluble if nothing remains in domain
                 if len(self.domains[x]) < 1:
+                    # TODO: Shouldn't this undo the revision?
                     return False
                 
                 # If revision occurs, enqueue additional arcs 
                 for z in self.crossword.neighbors(x):
                     if z is y:
                         continue
-                    arc_queue.put(x,z)
+                    arc_queue.put((x,z))
 
         return True
 
@@ -389,6 +402,8 @@ class CrosswordCreator():
             return assignment
         
         # Recursive bit: make next assignment
+        # print(self.domains.items())
+        # print()
 
         # Select unassigned variable
         var = self.select_unassigned_variable(assignment)
@@ -407,19 +422,19 @@ class CrosswordCreator():
                 # Otherwise, update inferences using ac3 and add to assignment
 
                 # Get all neighbours of X, the current var
-                Y_VAR = self.crossword.neighbors(var)
+                # Y_VAR = self.crossword.neighbors(var)
 
                 # Create a list of tuples representing overlaps (Y,X)
-                arcs = [(Y,var,word) for Y in Y_VAR]
+                # arcs = [(Y,var,word) for Y in Y_VAR]
 
                 # Call ac3 on queue of arcs (Y,X) where Y is a neighbour of X
-                inferences = self.ac3(arcs)
+                # inferences = self.ac3(arcs)
 
                 # Loop over inferences dictionary
-                for Y, inconsistent in inferences.items():
+                # for Y, inconsistent in inferences.items():
 
                     # Remove the inconsistent words from the domain of Y
-                    self.domains[Y] = self.domains[Y].difference(inconsistent)
+                    # self.domains[Y] = self.domains[Y].difference(inconsistent)
 
                 # Store result of backtracking, return if not None
                 result = self.backtrack(assignment)
@@ -430,9 +445,9 @@ class CrosswordCreator():
             assignment[var] = None
 
             # Remove inferences (add inconsistent words back)
-            if inferences is not None:
-                for Y, inconsistent in inferences.items():
-                    self.domains[Y] = self.domains[Y].union(inconsistent)
+            # if inferences is not None:
+                # for Y, inconsistent in inferences.items():
+                    # self.domains[Y] = self.domains[Y].union(inconsistent)
 
         return None
 
