@@ -1,7 +1,5 @@
 # Sudoku solver with inference and backtracking
 
-# Example board
-# [8, 5, 0, 0, 0, 2, 4, 0, 0, 7, 2, 0, 0, 0, 0, 0, 0, 9, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 7, 0, 0, 2, 3, 0, 5, 0, 0, 0, 9, 0, 0 ,0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 7, 0, 0, 1, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 0, 4, 0]
 
 from copy import copy
 import copy
@@ -20,35 +18,16 @@ class SudokuNode:
         # Refactor to account for lack of assigned value
 
         self.coordinates = coordinates
-        self.domain = set()
+        
+        # If node has an existing value assign it and modify constraints
+        self.domain = {value} if value != 0 else {i for i in range(1,10)}
+
         self.neighbours = set()
         self.row = coordinates[1]
         self.col = coordinates[0]
         self.box = box
 
-        # If node has an existing value assign it and modify constraints
-        if value == 0:
-            for i in range (1, 10):
-                self.domain.add(i)
-        else:
-            self.domain = value
-    
-    # def update_constraints(self):
-    #     """
-    #     Updates the node's constraints set according to values of node's adjacent nodes.
-    #     If an adjacent node is non-zero, removes its value from the constraints set.
-    #     If only one value remains in constraints set for a node with value == 0, 
-    #     sets the value of the node to the remaining value in the constraints set.
-    #     """
-    #     # Update list of constraints for the node to eliminate solved adjacent nodes
-    #     for adj in self.adjacent:
-    #         if adj.value != 0:
-    #             self.constraints.remove(adj.value)
-        
-    #     # If only one possibility remains, update node's value to index + 1
-    #     if len(self.constraints) == 1:
-    #         self.value = self.constraints.pop()
-    
+
     def add_neighbours(self, neighbours):
         """
         Sets the adjacent nodes field to the given parameter.
@@ -59,7 +38,34 @@ class SudokuNode:
         """
         Returns the node's domain.
         """
-        return copy.deepcopy(self.domain)
+        return self.domain
+    
+    def __eq__(self, other):
+        """
+        Returns True if objects are equal. Otherwise False
+        """
+
+        if isinstance(other, SudokuNode):
+            if self.coordinates == other.coordinates:
+                return True
+            
+        return False
+
+    def __hash__(self):
+        """
+        Returns hash value for node.
+        """
+        try:
+            return hash(self.coordinates)
+        except AttributeError:
+            print(self.coordinates)
+            quit()
+
+    def __repr__(self):
+        """
+        Returns string representation.
+        """
+        return f"Sudoku Node ({self.coordinates})"
 
 # Take out the sub-lists
 class SudokuBoard:
@@ -73,19 +79,15 @@ class SudokuBoard:
         self.board = []
 
         # defines coordinates for top left corner (0,0) to bottom right (8,8)
-        node_counter = 0            # tracks the index of the next node
-        box_counter = 0             # tracks the current node's box
+        # boxes:    0 1 2
+        #           3 4 5
+        #           6 7 8
+
         for y in range(9):
-            # Need to check if box counter should decrement by 3 or add 1
-            if y == 3 or y == 6:
-                box_counter += 1
-            else:
-                box_counter -= 3
             for x in range(9):
-                node_counter += 1
-                if node_counter % 3 == 0:
-                    box_counter += 1
-                self.board.append(SudokuNode(int(board[0]), (x,y), box_counter))
+                box = (y // 3) * 3 + (x // 3)
+
+                self.board.append(SudokuNode(int(board[0]), (x,y), box))
                 board = board[1:]
         
         self.neighbour_loop()      
@@ -94,7 +96,8 @@ class SudokuBoard:
         """
         Returns the board.
         """
-        return copy.deepcopy(self.board)
+        # return copy.deepcopy(self.board)
+        return self.board.copy()
 
 
     def add_neighbour_nodes(self, target_node):
@@ -134,6 +137,32 @@ class SudokuBoard:
         for node in self.board:
                 self.add_neighbour_nodes(node)
     
+
+
+
+
+
+
+    # DEPRECATED SUDOKUBOARD METHOD
+    
+    # def update_constraints(self):
+    #     """
+    #     Updates the node's constraints set according to values of node's adjacent nodes.
+    #     If an adjacent node is non-zero, removes its value from the constraints set.
+    #     If only one value remains in constraints set for a node with value == 0, 
+    #     sets the value of the node to the remaining value in the constraints set.
+    #     """
+    #     # Update list of constraints for the node to eliminate solved adjacent nodes
+    #     for adj in self.adjacent:
+    #         if adj.value != 0:
+    #             self.constraints.remove(adj.value)
+        
+    #     # If only one possibility remains, update node's value to index + 1
+    #     if len(self.constraints) == 1:
+    #         self.value = self.constraints.pop()
+    
+
+    # DEPRECATED SUDOKUNODE METHODS
     # def constraints_loop(self):
     #     """
     #     Updates the contrainsts set for each node in the board.
@@ -205,48 +234,48 @@ class SudokuBoard:
     #             return False
     #     return True
     
-    def is_correct_and_complete(self):
-        """
-        Alternative implementation. Assume no sub-lists.
-        """
+    # def is_correct_and_complete(self):
+    #     """
+    #     Alternative implementation. Assume no sub-lists.
+    #     """
 
-        # Check rows
-        row_total = set()
-        for i in range(9):
-            for node in self.board:
-                if node.row == i:
-                    row_total.add(node.value)
-            try:
-                assert sum(row_total) == 45
-            except AssertionError:
-                return False
-            row_total = set()
+    #     # Check rows
+    #     row_total = set()
+    #     for i in range(9):
+    #         for node in self.board:
+    #             if node.row == i:
+    #                 row_total.add(node.value)
+    #         try:
+    #             assert sum(row_total) == 45
+    #         except AssertionError:
+    #             return False
+    #         row_total = set()
 
-        # Check columns
-        col_total = set()
-        for i in range(9):
-            for node in self.board:
-                if node.col == i:
-                    col_total.add(node.value)
-            try:
-                assert sum(col_total) == 45
-            except AssertionError:
-                return False
-            col_total = set()
+    #     # Check columns
+    #     col_total = set()
+    #     for i in range(9):
+    #         for node in self.board:
+    #             if node.col == i:
+    #                 col_total.add(node.value)
+    #         try:
+    #             assert sum(col_total) == 45
+    #         except AssertionError:
+    #             return False
+    #         col_total = set()
         
-        # Check boxes
-        box_total = set()
-        for i in range(9):
-            for node in self.board:
-                if node.box == i:
-                    box_total.add(node.value)
-            try:
-                assert sum(box_total) == 45
-            except AssertionError:
-                return False
-            box_total = set()
+    #     # Check boxes
+    #     box_total = set()
+    #     for i in range(9):
+    #         for node in self.board:
+    #             if node.box == i:
+    #                 box_total.add(node.value)
+    #         try:
+    #             assert sum(box_total) == 45
+    #         except AssertionError:
+    #             return False
+    #         box_total = set()
         
-        return True
+    #     return True
 
     # def print_board(self):
     #     """
