@@ -1,8 +1,9 @@
 import sys
 
 from crossword import *
-from queue import Queue
-from copy import copy
+from copy import copy, deepcopy
+
+INTERLEAVING = False
 
 class CrosswordCreator():
 
@@ -90,9 +91,13 @@ class CrosswordCreator():
         """
         Enforce node and arc consistency, and then solve the CSP.
         """
+
         self.enforce_node_consistency()
         self.ac3()
-        return self.backtrack(dict())
+        if not INTERLEAVING:
+            return self.backtrack(dict())
+        else:
+            return self.backtrack_ac3(dict())
 
     def enforce_node_consistency(self):
         """
@@ -118,8 +123,10 @@ class CrosswordCreator():
         False if no revision was made.
         """
 
-        # If there is no overlap between x and y, return False
-        coords = self.crossword.overlaps[x,y] if not None else False
+        if x.__eq__(y):
+            return False
+
+        coords = self.crossword.overlaps[x,y]
         if not coords:
             return False
         
@@ -163,7 +170,7 @@ class CrosswordCreator():
         return False if one or more domains end up empty.
         """
 
-        arc_queue = Queue()
+        arc_queue = set()
 
         # Assume arcs is a list of tuples (v1, v2)
         # If optional argument is given, return a list of inconsistent words
@@ -171,7 +178,7 @@ class CrosswordCreator():
         if arcs is not None:
 
             for arc in arcs:
-                arc_queue.put(arc)
+                arc_queue.add(arc)
 
         # Add all arcs in the crossword if paramater is None
         else:
@@ -183,11 +190,12 @@ class CrosswordCreator():
                 for neigh in self.crossword.neighbors(var):
 
                     # Add tuple to arc queue
-                    arc_queue.put((var,neigh))
+                    arc_queue.add((var,neigh))
 
         # Until all arcs are dequeued
-        while not arc_queue.empty():
-            (x, y) = arc_queue.get()
+        while arc_queue:
+            
+            (x, y) = arc_queue.pop()
 
             # Revise arc
             if self.revise(x, y):
@@ -200,7 +208,7 @@ class CrosswordCreator():
                 for z in self.crossword.neighbors(x):
                     if z is y:
                         continue
-                    arc_queue.put((x,z))
+                    arc_queue.add((x,z))
 
         return True
 
@@ -209,10 +217,6 @@ class CrosswordCreator():
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-
-        # Check that each variable in crossword is accounted for
-        # vars1 = [var for var in self.crossword.variables]
-        # vars2 = assignment.keys()
 
         if len(self.crossword.variables) != len(assignment):
             return False
@@ -241,6 +245,7 @@ class CrosswordCreator():
 
             # Otherwise, check if word is the corrent length
             if len(word) != var.length:
+
                 return False
             
             # Check if var's assigned neighbours comply
@@ -254,13 +259,13 @@ class CrosswordCreator():
                 if neigh in assignment and assignment[neigh] is not None:
                     neigh_word = assignment[neigh]
 
-                    # Get overlap coordinates
+                    # Get overlap coordinates   
                     (var_index, neigh_index) = self.crossword.overlaps[var,neigh]
 
                     # Return False if character is not the same
                     if not word[var_index] == neigh_word[neigh_index]:
                         return False
-        
+                    
         return True
 
     def order_domain_values(self, var, assignment):
@@ -272,17 +277,13 @@ class CrosswordCreator():
         """
 
         # Create list of tuples of possible words and their n value
-        least_constrained = []
+        least_constrained = {word: 0 for word in self.domains[var]}
 
         # Get var neighbours
         var_neigh = self.crossword.neighbors(var)
 
         # Loop over the domain of var
         for var_word in self.domains[var]:
-
-            # Record least-constraining heuristic
-            # n is the options available for given word
-            n = 0
 
             # Loop over each of var's neighbours
             for neigh in var_neigh:
@@ -295,15 +296,10 @@ class CrosswordCreator():
 
                     # Check if neigh_word has same char at var_word overlap
                     if var_word[var_index] == neigh_word[neigh_index]:
-                        n += 1
-            
-            # Add tuple of current var_word and its n value
-            least_constrained.append((var_word, n))
+                        least_constrained[var_word] += 1
         
         # Sort list according to highest n value first
-        least_constrained.sort(key=lambda x: x[1])
-
-        return [x[0] for x in least_constrained]
+        return sorted([x for x in least_constrained.keys()], key = lambda x: least_constrained[x])
 
 
     def select_unassigned_variable(self, assignment):
@@ -363,19 +359,13 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        
+
         # Base case: assignment complete
         if self.assignment_complete(assignment):
             return assignment
-        
-        # Recursive bit: make next assignment
-        # print(self.domains.items())
-        # print()
 
         # Select unassigned variable
         var = self.select_unassigned_variable(assignment)
-
-        inferences = None
 
         # Loop over values in var's domain
         for word in self.order_domain_values(var, assignment):
@@ -386,44 +376,62 @@ class CrosswordCreator():
             # Continue to next word if assignment is not consistent
             if self.consistent(assignment):
                 
-                # Otherwise, update inferences using ac3 and add to assignment
-
-                # Get all neighbours of X, the current var
-                Y_VAR = self.crossword.neighbors(var)
-
-                # Create a list of tuples representing overlaps (Y,X)
-                arcs = [(Y,var) for Y in Y_VAR]
-
-                # Make a copy of domains of all Y variables and X
-                Y_VAR.add(var)
-                domains_copy = {x:self.domains[x] for x in Y_VAR}
-
-                # Set domain of X to the current word
-                self.domains[var] = set()
-                self.domains[var].add(word)
-
-                # Call ac3 on queue of arcs (Y,X) where Y is a neighbour of X
-                self.ac3(arcs)
-
-                # Gather the inferences (incase of need to reverse)
-                # These are the copied domains difference the new domains
-                inferences = {x:domains_copy[x].difference(self.domains[x]) for x in Y_VAR}
-
                 # Store result of backtracking, return if not None
                 result = self.backtrack(assignment)
-                if result is not None:
+                if result:
                     return result
             
             # Otherwise, undo the assignment and remove inferences
             assignment[var] = None
 
+        return None
+
+    def backtrack_ac3(self, assignment):
+        """
+        Backtrack with interleaving.
+        """
+        # Base case: assignment complete
+        if self.assignment_complete(assignment):
+            return assignment
+
+        # Select unassigned variable
+        var = self.select_unassigned_variable(assignment)
+
+        # Make a copy of domains
+        copied_domains = deepcopy(self.domains)
+
+        # Loop over values in var's domain
+        for word in self.order_domain_values(var, assignment):
+
+            # Assign word in assignment dictionary
+            assignment[var] = word
+
+            # Continue to next word if assignment is not consistent
+            if self.consistent(assignment):
+
+                # Set domain of var to the current word
+                self.domains[var] = {word}
+
+                # Remove inconsistent words from neighbour variables
+                self.ac3([(neigh, var) for neigh in self.crossword.neighbors(var)])
+
+                # Store result of backtracking, return if not None
+                result = self.backtrack(assignment)
+                if result is not None:
+                    return result    
+            
+            # Otherwise, undo the assignment and remove inferences
+            del assignment[var]
+
             # Remove inferences from domains (add inconsistent words back)
-            if inferences is not None:
-                for Y, inconsistent in inferences.items():
-                    self.domains[Y] = self.domains[Y].union(inconsistent)
+            self.domains = copied_domains
 
         return None
 
+# import cProfile, signal, time
+
+# def timeout_handler(signum, frame):
+#     raise Exception("End of profiling")
 
 def main():
 
@@ -452,3 +460,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # Set the signal handler and a 5-minute alarm
+    # signal.signal(signal.SIGALRM, timeout_handler)
+    # signal.alarm(100)  # 300 seconds = 5 minutes
+
+    # try:
+    #     cProfile.run('main()', 'restats')
+    # except Exception as e:
+    #     print(e)
+
+    # # Use pstats to read and print the stats
+    # import pstats
+    # p = pstats.Stats('restats')
+    # p.sort_stats('cumulative').print_stats(10)  # Print top 10 functions

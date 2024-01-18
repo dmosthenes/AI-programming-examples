@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["data/structure1.txt", "data/words1.txt", "output.png"]
+            "args": ["data/structure3.txt", "data/words2.txt", "output.png"]
         }
     ]
 }
