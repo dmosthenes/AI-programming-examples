@@ -12,7 +12,7 @@ class SudokuNode:
     Lists possible values in constraints set. Empty set if value == 0.
     Includes empty set to store adjacent nodes.
     """
-    def __init__(self, value, coordinates, box):
+    def __init__(self, value, coordinates, box, neighbours=None):
         # self.value = value
 
         # Refactor to account for lack of assigned value
@@ -22,11 +22,18 @@ class SudokuNode:
         # If node has an existing value assign it and modify constraints
         self.domain = {value} if value != 0 else {i for i in range(1,10)}
 
-        self.neighbours = set()
+        if not neighbours:
+            self.neighbours = set()
+        else:
+            self.neighbours = neighbours
         self.row = coordinates[1]
         self.col = coordinates[0]
         self.box = box
 
+    def __deepcopy__(self, memo):
+        new_node = SudokuNode(0, self.coordinates, self.box, self.neighbours)
+        memo[id(self)] = new_node
+        return new_node
 
     def add_neighbours(self, neighbours):
         """
@@ -125,6 +132,9 @@ class SudokuBoard:
         for node in self.board:
             if node.box == target_box:
                 neighbour_nodes.add(node)
+
+        # Remove target node
+        neighbour_nodes.remove(target_node)
 
         target_node.add_neighbours(neighbour_nodes)
 
