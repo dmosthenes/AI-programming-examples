@@ -101,7 +101,11 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        if (state, action) in self.q:
+            return self.q[(state, action)]
+        return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -118,7 +122,9 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        self.q[(state, action)] = old_q + self.alpha * ((reward + future_rewards) - old_q)
 
     def best_future_reward(self, state):
         """
@@ -130,7 +136,27 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        # state is a list of values [1, 1, 3, 5] where index represents the pile
+        # and the number is the remaining objects
+
+        best_reward = 0
+
+        # Loop over all possible moves for state
+
+        # Select a pile
+        for pile, objects in enumerate(state):
+
+            # Select a number of objects to remove
+            for object in range(1, objects + 1):
+
+                # best_reward = self.q([(state, (pile, object))]) if self.q.get(([(state, (pile, object))])) > best_reward else best_reward
+                q_val = (state, (pile, object)) if (state, (pile, object)) in self.q else 0
+                best_reward = q_val if q_val > best_reward else best_reward
+
+        return best_reward
+    
 
     def choose_action(self, state, epsilon=True):
         """
@@ -147,7 +173,30 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        # Create a list of tuples (q_value, action)
+        action_rank = []
+
+        # Loop over all possible moves for state
+
+        # Loop over piles
+        for pile, objects in state:
+
+            # Loop over available objects
+            for object in range(1, objects + 1):
+
+                q_val = self.q.get((state, (pile, object)), 0)
+
+                action_rank.append((q_val, (pile, object)))
+                
+        # For epsilon-greedy, choose random move with epsilon chance
+        if epsilon and random.random(0,1) < self.epsilon:
+
+            return random.choice(action_rank)[1]
+
+        # Sort list and return action with highest score
+        return sorted(action_rank, key=lambda x: x[0], reverse=True)[1]
 
 
 def train(n):
