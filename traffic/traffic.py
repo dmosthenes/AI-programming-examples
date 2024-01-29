@@ -58,7 +58,34 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+
+    # Create output lists of form (image, label)
+    images = []
+    labels = []
+
+    # Loop over each subfolder in data_dir
+    for sub_dir in range(43):
+
+        # Create new path for subfolder
+        current_dir = os.path.join(data_dir, str(sub_dir))
+
+        # Read each image in the current dir as a numpy multi-dimensional array
+        for im_file in os.listdir(current_dir):
+
+            print("current image: ", im_file)
+
+            # Use cv2 to read the image
+            image = cv2.imread(os.path.join(current_dir, im_file))
+
+            # Resize file to img_width and img_height
+            image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
+
+            # Add image and label to list
+            images.append(image)
+            labels.append(sub_dir)
+
+    return (images, labels)
 
 
 def get_model():
@@ -67,7 +94,38 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+
+    # Create a convolutional neural network
+    model = tf.keras.Sequential([
+
+        # Convolutional layer with n filters of n different sizes
+        tf.keras.layers.Conv2D(
+            70, (9, 9), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
+
+        # Max-pooling layer, using n*n pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(4, 4)),
+
+        # Flatten units
+        tf.keras.layers.Flatten(),
+
+        # Hidden layer of n size with dropout
+        tf.keras.layers.Dense(156, activation="relu"),
+        tf.keras.layers.Dropout(0.2),
+        
+        # Output layer with NUM_CATEGORIES outputs
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+
+    ])
+
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 if __name__ == "__main__":
