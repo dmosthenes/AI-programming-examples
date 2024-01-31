@@ -37,8 +37,8 @@ V -> "smiled" | "tell" | "were"
 # """
 
 NONTERMINALS = """
-S -> NP V | NP V NP | NP Conj NP
-NP -> N | N NP | Det N | Det N NP | P NP | Det Adj NP | Adj NP | N V | N Adv V | V Det N | N V NP | N Adv V NP | Det N Adv | N V Adv | V N NP
+S -> NP V | NP V NP | NP Conj NP | NP P NP
+NP -> N | N NP | Det N | Det N NP | P NP | Det Adj NP | Adj NP | N V | N Adv V | V Det N | N V NP | N Adv V NP | Det N Adv | N V Adv | V N NP | V NP
 """
 
 
@@ -56,29 +56,29 @@ def main():
     # Otherwise, get sentence as input
     else:
 
-        while True:
-            s = input("Sentence: ")
+        # while True:
+        s = input("Sentence: ")
 
-            # Convert input into list of words
-            s = preprocess(s)
+        # Convert input into list of words
+        s = preprocess(s)
 
-            # Attempt to parse sentence
-            try:
-                trees = list(parser.parse(s))
-            except ValueError as e:
-                print(e)
-                return
-            if not trees:
-                print("Could not parse sentence.")
-                return
+        # Attempt to parse sentence
+        try:
+            trees = list(parser.parse(s))
+        except ValueError as e:
+            print(e)
+            return
+        if not trees:
+            print("Could not parse sentence.")
+            return
 
-            # Print each tree with noun phrase chunks
-            for tree in trees:
-                tree.pretty_print()
+        # Print each tree with noun phrase chunks
+        for tree in trees:
+            tree.pretty_print()
 
-                print("Noun Phrase Chunks")
-                for np in np_chunk(tree):
-                    print(" ".join(np.flatten()))
+            print("Noun Phrase Chunks")
+            for np in np_chunk(tree):
+                print(" ".join(np.flatten()))
 
 
 def preprocess(sentence):
@@ -115,8 +115,41 @@ def np_chunk(tree):
     whose label is "NP" that does not itself contain any other
     noun phrases as subtrees.
     """
-    # raise NotImplementedError
-    return []
+
+    frontier = []
+    out = []
+
+    # Add initial NP to frontier
+    # for subtree in tree.subtrees():
+    #     if subtree.label() == "NP":
+    #         frontier.append(subtree)
+
+    frontier.append(tree)
+
+    while frontier:
+
+        sub_NP = False
+
+        # loop over all subtrees for the popped element of the frontier
+        tree = frontier.pop()
+
+        for subtree in tree.subtrees():
+
+            # This loop adds the tree itself as a subtree, creating an infinite loop
+            # This is avoided by skipping on equality between the tree and subtree
+            if subtree == tree:
+                continue
+
+            # If a NP is a subtree, add to frontier
+            if subtree.label() == "NP":
+                frontier.append(subtree)
+                sub_NP = True
+
+        # When the tree has no NPs and is not already in the out list, it can be added
+        if not sub_NP and tree not in out:
+            out.append(tree)
+
+    return out
 
 
 if __name__ == "__main__":
