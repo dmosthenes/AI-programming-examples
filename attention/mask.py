@@ -89,7 +89,7 @@ def visualize_attentions(tokens, attentions):
     #     attentions[0][0][0]
     # )
 
-    print(len(attentions))
+    # print(len(attentions))
 
     for layer in range(len(attentions)):
 
