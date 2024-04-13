@@ -3,13 +3,13 @@ This respository provides examples of AI and machine learning programs and progr
 Three of these programs are implementations of the wave function collapse algorithm. These are:
 
 Sudoku: 
-![Sudoku solver](https://...)
+![Sudoku solver](https://github.com/dmosthenes/AI-programming-examples/blob/main/sudoku.gif?raw=true)
 
 Crossword:
-!
+![Crossword creator](https://github.com/dmosthenes/AI-programming-examples/blob/main/crossword.gif?raw=true)
 
 Pattern generation:
-!
+![Pattern creator](https://github.com/dmosthenes/AI-programming-examples/blob/main/pattern.gif?raw=true)
 
 The genetic project uses a custom neural network with random initial weights as the basis for a genetic algorithm to find a optimal player of the game Flappy Bird:
 
@@ -25,7 +25,7 @@ Traffic trains a convolutional neural network to recognise road signs:
 ![Traffic](https://...)
 
 Tictactoe is an implementation of the two-player minimax algorithm:
-![TicTacToe](https://...)
+![TicTacToe](https://github.com/dmosthenes/AI-programming-examples/blob/main/tictactoe.gif?raw=true)
 
 Shopping uses a k-nearest-neighbour classifier to predict user behaviour:
 
