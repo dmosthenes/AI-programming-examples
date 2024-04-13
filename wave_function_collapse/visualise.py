@@ -430,8 +430,8 @@ def main():
     width = 800
     height = 800
 
-    rows = 20
-    cols = 20
+    rows = 10
+    cols = 10
 
     # self.scaling_factor = (self.window_width / self.board.rows) / self.numbered_tiles[0].width
 

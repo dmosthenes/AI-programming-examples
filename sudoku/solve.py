@@ -476,7 +476,7 @@ def main():
 
     # Ingest suduko board
     if len(sys.argv) < 3:
-        board_string = EXAMPLE12
+        board_string = EXAMPLE6
     
     # Set interleaving
     if len(sys.argv) == 2:

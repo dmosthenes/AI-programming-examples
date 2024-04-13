@@ -12,6 +12,7 @@ Pattern generation:
 !
 
 The genetic project uses a custom neural network with random initial weights as the basis for a genetic algorithm to find a optimal player of the game Flappy Bird:
+
 ![Flappy bird](https://github.com/dmosthenes/AI-programming-examples/blob/main/flappy.gif?raw=true)
 
 The nim project uses reinforcement learning to train an optimal player in the game Nim:
