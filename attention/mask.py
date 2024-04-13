@@ -51,8 +51,9 @@ def get_mask_token_index(mask_token_id, inputs):
 
     input_ids = inputs["input_ids"]
 
-    return np.argmax(input_ids == mask_token_id)
+    index = np.argmax(input_ids == mask_token_id)
 
+    return index if index != 0 else None
 
 
 def get_color_for_attention_score(attention_score):

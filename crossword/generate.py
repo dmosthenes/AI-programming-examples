@@ -3,7 +3,7 @@ import sys
 from crossword import *
 from copy import copy, deepcopy
 
-INTERLEAVING = False
+INTERLEAVING = True
 
 class CrosswordCreator():
 

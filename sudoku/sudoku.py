@@ -150,9 +150,6 @@ class SudokuBoard:
 
 
 
-
-
-
     # DEPRECATED SUDOKUBOARD METHOD
     
     # def update_constraints(self):
