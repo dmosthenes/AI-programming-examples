@@ -19,18 +19,15 @@ The genetic project uses a custom neural network with random initial weights as 
 ![Flappy bird](https://github.com/dmosthenes/AI-programming-examples/blob/main/flappy.gif?raw=true)
 
 The nim project uses reinforcement learning to train an optimal player in the game Nim:
-![Nim](https://...)
 
-Pagerank implements the Google Pagerank algorithm for web search:
-![Pagerank](https://...)
-
-Traffic trains a convolutional neural network to recognise road signs:
-![Traffic](https://...)
+![Nim](https://github.com/dmosthenes/AI-programming-examples/blob/main/nim.gif?raw=true)
 
 Tictactoe is an implementation of the two-player minimax algorithm:
 
 ![TicTacToe](https://github.com/dmosthenes/AI-programming-examples/blob/main/tictactoe.gif?raw=true)
 
-Shopping uses a k-nearest-neighbour classifier to predict user behaviour:
+Shopping uses a k-nearest-neighbour classifier to predict user behaviour.
 
+Pagerank implements the Google Pagerank algorithm for web search.
 
+Traffic trains a convolutional neural network to recognise road signs.
