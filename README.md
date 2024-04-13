@@ -26,6 +26,6 @@ Traffic trains a convolutional neural network to recognise road signs:
 Tictactoe is an implementation of the two-player minimax algorithm:
 ![TicTacToe](https://...)
 
-Shapping uses a k-nearest-neighbour classifier to predict user behaviour:
+Shopping uses a k-nearest-neighbour classifier to predict user behaviour:
 
 
