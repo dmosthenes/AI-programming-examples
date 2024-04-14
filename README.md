@@ -30,14 +30,14 @@ Minesweeper uses propositional logic to create an optimal minsweeper player:
 
 ![Minesweeper](https://github.com/dmosthenes/AI-programming-examples/blob/main/minesweeper.gif?raw=true)
 
-Some other (less visual) projects in this directory:
+Some other (less visual) projects in this repository:
 
-    Shopping uses a k-nearest-neighbour classifier to predict user behaviour.
+* Shopping uses a k-nearest-neighbour classifier to predict user behaviour.
 
-    Pagerank implements the Google Pagerank algorithm for web search.
+* Pagerank implements the Google Pagerank algorithm for web search.
 
-    Traffic trains a convolutional neural network to recognise road signs.
+* Traffic trains a convolutional neural network to recognise road signs.
 
-    Heredity uses bayesian networks to model the inheritance of genetic traits.
+* Heredity uses bayesian networks to model the inheritance of genetic traits.
 
-    Degrees uses breadth-first search to identify the shortest route between two actors based on film credits.
+* Degrees uses breadth-first search to identify the shortest route between two actors based on film credits.
