@@ -39,3 +39,5 @@ Some other (less visual) projects in this directory:
     Traffic trains a convolutional neural network to recognise road signs.
 
     Heredity uses bayesian networks to model the inheritance of genetic traits.
+
+    Degrees uses 
