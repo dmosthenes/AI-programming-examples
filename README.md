@@ -28,7 +28,7 @@ Tictactoe is an implementation of the two-player minimax algorithm:
 
 Minesweeper uses propositional logic to create an optimal minsweeper player:
 
-![Minesweeper]
+![Minesweeper](https://github.com/dmosthenes/AI-programming-examples/blob/main/minesweeper.gif?raw=true)
 
 Some other (less visual) projects in this directory:
 
@@ -40,4 +40,4 @@ Some other (less visual) projects in this directory:
 
     Heredity uses bayesian networks to model the inheritance of genetic traits.
 
-    Degrees uses 
+    Degrees uses breadth-first search to identify the shortest route between two actors based on film credits.
